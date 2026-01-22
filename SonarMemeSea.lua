@@ -23,6 +23,53 @@ end)
 local AutoFarm = false
 local FarmDistance = 6
 local FarmSpeed = 120
+-- GETLEVEL
+local function GetLevel()
+    local ls = Player:FindFirstChild("leaderstats")
+    if ls and ls:FindFirstChild("Level") then
+        return ls.Level.Value
+    end
+    return 1
+end
+--QUEST TABBLE
+local QuestTable = {
+    {
+        Min = 1,
+        Max = 10,
+        QuestName = "BanditQuest",
+        MobName = "Bandit",
+        QuestNPC = CFrame.new(0, 5, 0)
+    },
+    {
+        Min = 11,
+        Max = 25,
+        QuestName = "PirateQuest",
+        MobName = "Pirate",
+        QuestNPC = CFrame.new(120, 5, -30)
+    }
+}
+--GET QUEST LEVEL
+local function GetQuestByLevel(level)
+    for _, q in pairs(QuestTable) do
+        if level >= q.Min and level <= q.Max then
+            return q
+        end
+    end
+end
+-- HASQUEST
+local function HasQuest()
+    return Player.PlayerGui:FindFirstChild("QuestGui") ~= nil
+end
+-- TAKE QUEST
+local function TakeQuest(quest)
+    if not quest or HasQuest() then return end
+    if not HRP then return end
+
+    HRP.CFrame = quest.QuestNPC
+    task.wait(0.5)
+
+    -- QuestRemote:FireServer(quest.QuestName)
+end
 
 -- =========================
 -- UTILS
@@ -71,29 +118,18 @@ local function IsPlayer(model)
     return Players:GetPlayerFromCharacter(model) ~= nil
 end
 --GETNEARESTENEMY
-local function GetNearestEnemy()
-    local closest = nil
-    local shortest = math.huge
-
+local function GetQuestMob(mobName)
     for _, v in pairs(workspace:GetDescendants()) do
         if v:IsA("Model")
+        and v.Name == mobName
         and v:FindFirstChild("Humanoid")
         and v:FindFirstChild("HumanoidRootPart")
         and v.Humanoid.Health > 0
-        and not Players:GetPlayerFromCharacter(v) -- LOẠI PLAYER
-        and v.Name ~= Character.Name then
-
-            local dist = (HRP.Position - v.HumanoidRootPart.Position).Magnitude
-            if dist < shortest and dist < 500 then
-                shortest = dist
-                closest = v
-            end
+        and not Players:GetPlayerFromCharacter(v) then
+            return v
         end
     end
-
-    return closest
 end
-
 
 -- =========================
 -- AUTO FARM LOOP
@@ -103,10 +139,18 @@ if not Character:FindFirstChildOfClass("Tool") then
     task.wait(0.5)
 end
 task.spawn(function()
-    while task.wait(0.1) do
-        if AutoFarm and Character and Humanoid.Health > 0 then
-            local enemy = GetNearestEnemy()
-            if enemy and enemy:FindFirstChild("HumanoidRootPart") then
+    while task.wait(0.2) do
+        if not AutoFarm or not Character or Humanoid.Health <= 0 then continue end
+
+        local level = GetLevel()
+        local quest = GetQuestByLevel(level)
+        if not quest then continue end
+
+        if not HasQuest() then
+            TakeQuest(quest)
+        else
+            local enemy = GetQuestMob(quest.MobName)
+            if enemy then
                 EquipWeapon()
                 local erp = enemy.HumanoidRootPart
 
