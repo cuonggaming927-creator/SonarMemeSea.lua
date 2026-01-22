@@ -70,40 +70,23 @@ local EnemyFolder =
 local function IsPlayer(model)
     return Players:GetPlayerFromCharacter(model) ~= nil
 end
-
+--GETNEARESTENEMY
 local function GetNearestEnemy()
-    local closest, dist = nil, math.huge
+    local closest = nil
+    local shortest = math.huge
 
-    if EnemyFolder then
-        -- CÁCH CHUẨN (KHÔNG BAO GIỜ DÍNH PLAYER)
-        for _, mob in pairs(EnemyFolder:GetChildren()) do
-            if mob:IsA("Model")
-            and mob:FindFirstChild("Humanoid")
-            and mob:FindFirstChild("HumanoidRootPart")
-            and mob.Humanoid.Health > 0 then
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Model")
+        and v:FindFirstChild("Humanoid")
+        and v:FindFirstChild("HumanoidRootPart")
+        and v.Humanoid.Health > 0
+        and not Players:GetPlayerFromCharacter(v) -- LOẠI PLAYER
+        and v.Name ~= Character.Name then
 
-                local d = (HRP.Position - mob.HumanoidRootPart.Position).Magnitude
-                if d < dist then
-                    dist = d
-                    closest = mob
-                end
-            end
-        end
-    else
-        -- FALLBACK (LOẠI PLAYER)
-        for _, v in pairs(workspace:GetDescendants()) do
-            if v:IsA("Model")
-            and v:FindFirstChild("Humanoid")
-            and v:FindFirstChild("HumanoidRootPart")
-            and v.Humanoid.Health > 0
-            and not IsPlayer(v)
-            and v ~= Character then
-
-                local d = (HRP.Position - v.HumanoidRootPart.Position).Magnitude
-                if d < dist then
-                    dist = d
-                    closest = v
-                end
+            local dist = (HRP.Position - v.HumanoidRootPart.Position).Magnitude
+            if dist < shortest and dist < 500 then
+                shortest = dist
+                closest = v
             end
         end
     end
@@ -111,9 +94,14 @@ local function GetNearestEnemy()
     return closest
 end
 
+
 -- =========================
 -- AUTO FARM LOOP
 -- =========================
+if not Character:FindFirstChildOfClass("Tool") then
+    EquipWeapon()
+    task.wait(0.5)
+end
 task.spawn(function()
     while task.wait(0.1) do
         if AutoFarm and Character and Humanoid.Health > 0 then
@@ -134,7 +122,7 @@ task.spawn(function()
         end
     end
 end)
-
+Humanoid:ChangeState(Enum.HumanoidStateType.Running)
 -- =========================
 -- GUI
 -- =========================
